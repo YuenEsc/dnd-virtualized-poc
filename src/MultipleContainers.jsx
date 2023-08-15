@@ -1,12 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import {
-  closestCenter,
-  pointerWithin,
-  rectIntersection,
   DndContext,
   DragOverlay,
-  getFirstCollision,
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
@@ -16,23 +12,11 @@ import {
   MeasuringStrategy,
   defaultDropAnimationSideEffects,
 } from "@dnd-kit/core"
-import {
-  SortableContext,
-  useSortable,
-  arrayMove,
-  defaultAnimateLayoutChanges,
-  verticalListSortingStrategy,
-  horizontalListSortingStrategy,
-} from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
+import { arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { coordinateGetter as multipleContainersCoordinateGetter } from "./multipleContainersKeyboardCoordinates"
-import styles from "./components/Virtualized.module.css"
 
 import { createRange } from "./utils/route"
 import { Item } from "./components/Item"
-import { Container } from "./components/Container"
-import VirtualList from "react-tiny-virtual-list"
-import { Wrapper } from "./components/Wrapper"
 import VirtualizedContainer from "./components/VirtualizedContainer"
 import DroppableContainer from "./components/DroppableContainer"
 import { useCollisionDetectionStrategy } from "./useCollisionDetectionStrategy"
@@ -269,10 +253,10 @@ export function MultipleContainers({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={collisionDetectionStrategy}
       measuring={{
         droppable: {
-          strategy: MeasuringStrategy.Always,
+          strategy: MeasuringStrategy.WhileDragging,
         },
       }}
       cancelDrop={({ over, active }) => {}}
@@ -308,6 +292,7 @@ export function MultipleContainers({
               scrollable={scrollable}
               columns={columns}
               renderItem={renderItem}
+              lastOverId={lastOverId}
             />
           )
         })}
@@ -324,7 +309,7 @@ export function MultipleContainers({
         )}
       </div>
       {createPortal(
-        <DragOverlay adjustScale={false} dropAnimation={dropAnimation}>
+        <DragOverlay adjustScale={false}>
           {activeId ? (
             <Item
               value={activeId}
@@ -339,7 +324,7 @@ export function MultipleContainers({
                 isDragOverlay: true,
               })}
               wrapperStyle={{
-                padding: 1.2,
+                height: "62px",
               }}
               color={getColor(activeId)}
               dragOverlay

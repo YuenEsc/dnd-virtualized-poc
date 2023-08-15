@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable"
 import { Item } from "./Item"
-import React, { useEffect, useState } from "react"
+import React, { memo, useEffect, useState } from "react"
 
 function SortableItem({
   disabled,
@@ -65,7 +65,7 @@ function SortableItem({
   )
 }
 
-export default SortableItem
+export default memo(SortableItem)
 
 function useMountStatus() {
   const [isMounted, setIsMounted] = useState(false)

@@ -16,12 +16,8 @@ import { TRASH_ID } from "./MultipleContainers"
  *
  */
 
-export const useCollisionDetectionStrategy = ({
-  activeId,
-  items,
-  lastOverId,
-  recentlyMovedToNewContainer,
-}) => {
+export const useCollisionDetectionStrategy = (params) => {
+  const { activeId, items, lastOverId, recentlyMovedToNewContainer } = params
   const collisionDetectionStrategy = useCallback(
     (args) => {
       if (activeId && activeId in items) {
@@ -43,12 +39,6 @@ export const useCollisionDetectionStrategy = ({
       let overId = getFirstCollision(intersections, "id")
 
       if (overId != null) {
-        if (overId === TRASH_ID) {
-          // If the intersecting droppable is the trash, return early
-          // Remove this if you're not using trashable functionality in your app
-          return intersections
-        }
-
         if (overId in items) {
           const containerItems = items[overId]
 
@@ -64,7 +54,6 @@ export const useCollisionDetectionStrategy = ({
             })[0]?.id
           }
         }
-
         lastOverId.current = overId
 
         return [{ id: overId }]

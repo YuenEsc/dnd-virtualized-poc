@@ -1,11 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useRef } from "react"
-import PropTypes from "prop-types"
-import { Wrapper } from "./Wrapper"
+import React, { useMemo, useRef } from "react"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
-import VirtualList from "react-tiny-virtual-list"
-import styles from "./Virtualized.module.css"
 import DroppableContainer from "./DroppableContainer"
 import SortableItem from "./SortableItem"
+import useVirtual from "react-cool-virtual"
 
 const VirtualizedContainer = ({
   containerStyle,
@@ -26,40 +23,28 @@ const VirtualizedContainer = ({
 }) => {
   const virtualListRef = useRef()
   const itemCount = items[containerId].length
+
   const stickyIndices = useMemo(() => {
-    if (activeId && containerId) {
+    if (activeId) {
       const index = items[containerId].indexOf(activeId)
       return index !== -1 ? [index] : []
     }
     return []
-  }, [activeId, containerId, items])
+  }, [activeId, containerId, items[containerId]])
 
-  const renderRow = useCallback(({ index, style }) => {
-    const id = items[containerId][index]
-    return (
-      <SortableItem
-        key={`${containerId}-${id}-sortable-item`}
-        id={id}
-        index={index}
-        handle={handle}
-        wrapperStyle={() => ({
-          ...style,
-        })}
-        style={getItemStyles}
-        disabled={isSortingContainer}
-        renderItem={renderItem}
-        containerId={containerId}
-        getIndex={getIndex}
-        useDragOverlay
-      />
-    )
+  if (Array.isArray(stickyIndices) && stickyIndices.length !== 0) {
+  }
+
+  const {
+    outerRef,
+    innerRef,
+    items: virtualizedItems,
+  } = useVirtual({
+    itemCount,
+    itemSize: 62,
+    stickyIndices, // The values must be provided in ascending order,
+    scrollEasingFunction: () => 0,
   })
-
-  useEffect(() => {
-    if (virtualListRef) {
-      virtualListRef?.current?.recomputeSizes()
-    }
-  }, [stickyIndices, containerId, lastOverId, activeId])
 
   return (
     <DroppableContainer
@@ -77,16 +62,49 @@ const VirtualizedContainer = ({
         items={items[containerId]}
         strategy={verticalListSortingStrategy}
       >
-        <VirtualList
-          ref={(node) => (virtualListRef.current = node)}
-          width={375}
-          height={600}
-          className={styles.VirtualList}
-          itemCount={itemCount}
-          itemSize={62}
-          stickyIndices={stickyIndices}
-          renderItem={renderRow}
-        />
+        <div
+          style={{ width: "348px", height: "600px", overflowY: "scroll" }}
+          ref={outerRef}
+        >
+          <div ref={innerRef}>
+            {virtualizedItems.map((virtualizedItem) => {
+              const { index, size, start, isSticky } = virtualizedItem
+              const id = items[containerId][index]
+              let style = { height: `${size}px` }
+              // Use the `isSticky` property to style the sticky item, that's it ✨
+              style = isSticky
+                ? {
+                    ...style,
+                    position: "sticky",
+                    top: "0",
+                    bottom: "0",
+                  }
+                : style
+
+              return (
+                <div
+                  key={`${containerId}-${id}-draggable-item-${isSticky}-sticky`}
+                  style={style}
+                >
+                  <SortableItem
+                    id={id}
+                    index={index}
+                    handle={handle}
+                    wrapperStyle={() => ({
+                      height: `${size}px`,
+                    })}
+                    style={getItemStyles}
+                    disabled={isSortingContainer}
+                    renderItem={renderItem}
+                    containerId={containerId}
+                    getIndex={getIndex}
+                    useDragOverlay
+                  />
+                </div>
+              )
+            })}
+          </div>
+        </div>
       </SortableContext>
     </DroppableContainer>
   )
